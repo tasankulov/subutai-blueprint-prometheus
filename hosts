@@ -1,0 +1,3 @@
+test ansible_host=192.168.5.192
+[prometheus]
+test

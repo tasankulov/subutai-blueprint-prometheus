@@ -1,0 +1,180 @@
+---
+
+- hosts: prometheus
+  remote_user: root
+  tasks:
+
+    - name: Upgrade debian
+      apt:
+        update_cache: true
+        upgrade: true
+
+    - name: Installing ca-certificates, nginx, python-passlib and apache2-utils
+      apt:
+        name: "{{ packages }}"
+      vars: 
+        packages:
+        - nginx
+        - ca-certificates
+        - apache2-utils
+        - python-passlib
+
+    - name: Creating prometheus user group
+      group: name="{{prom_groupId}}"
+      become: true
+
+    - name: Creating prometheus user
+      user:
+        name: "{{prom_userId}}"
+        group: "{{prom_groupId}}"
+        system: yes
+        shell: "/sbin/nologin"
+        comment: "{{prom_userId}} nologin User"
+        createhome: "no"
+        state: present      
+
+    - name: Downloading prometheus
+      unarchive:
+        src: "https://github.com/prometheus/prometheus/releases/download/v2.8.1/prometheus-2.8.1.linux-amd64.tar.gz"
+        dest: /tmp/
+        remote_src: yes
+
+    - name: Copy prometheus file to bin
+      copy:
+        src: "/tmp/prometheus-2.8.1.linux-amd64/prometheus"
+        dest: "/usr/local/bin/prometheus"
+        owner: "{{prom_userId}}"
+        group: "{{prom_groupId}}"
+        remote_src: yes
+        mode: 0755
+
+    - name: Copy promtool file to bin
+      copy:
+        src: "/tmp/prometheus-2.8.1.linux-amd64/promtool"
+        dest: "/usr/local/bin/promtool"
+        owner: "{{prom_userId}}"
+        group: "{{prom_groupId}}"
+        remote_src: yes
+        mode: 0755
+
+    - name: Creates directory /var/lib/prometheus
+      file: 
+        path: "/var/lib/prometheus"
+        state: directory
+        owner: "{{prom_userId}}"
+        group: "{{prom_groupId}}"
+        mode: 0755
+
+    - name: Creates directory /etc/prometheus
+      file: 
+        path: "/etc/prometheus/"
+        state: directory
+        owner: "{{prom_userId}}"
+        group: "{{prom_groupId}}"
+        mode: 0755
+
+    - name: Copy the consoles/ and console_libraries/ directories to /etc/prometheus
+      shell: cp -r /tmp/prometheus-2.8.1.linux-amd64/consoles /etc/prometheus/ && cp -r /tmp/prometheus-2.8.1.linux-amd64/console_libraries /etc/prometheus/
+
+    - file:
+        path: /etc/prometheus/consoles
+        owner: "{{prom_userId}}"
+        group: "{{prom_groupId}}"
+
+    - file:
+        path: /etc/prometheus/console_libraries
+        owner: "{{prom_userId}}"
+        group: "{{prom_groupId}}"
+
+    - name: Copy prometheus properties file
+      template:
+        src: prometheus.yml
+        dest: /etc/prometheus/prometheus.yml
+
+    - name: Copy prometheus systemd unit file
+      template:
+        src: prometheus.service
+        dest: /etc/systemd/system/prometheus.service
+
+    - name: Creating node_exporter user group
+      group: name="{{node_userId}}"
+      become: true
+
+    - name: Creating node_exporter user
+      user:
+        name: "{{node_userId}}"
+        group: "{{node_groupId}}"
+        system: yes
+        shell: "/sbin/nologin"
+        comment: "{{node_userId}} nologin User"
+        createhome: "no"
+        state: present      
+
+    - name: Downloading node_exporter
+      unarchive:
+        src: "https://github.com/prometheus/node_exporter/releases/download/v0.17.0/node_exporter-0.17.0.linux-amd64.tar.gz"
+        dest: /tmp/
+        remote_src: yes
+
+    - name: Copy node_exporter file to bin
+      copy:
+        src: "/tmp/node_exporter-0.17.0.linux-amd64/node_exporter"
+        dest: "/usr/local/bin/node_exporter"
+        owner: "{{node_userId}}"
+        group: "{{node_groupId}}"
+        remote_src: yes
+        mode: 0755
+
+    - name: Copy node_exporter systemd unit file
+      template:
+        src: node_exporter.service
+        dest: /etc/systemd/system/node_exporter.service
+
+    - name: Start node_exporter
+      systemd: 
+        name: node_exporter.service
+        daemon_reload: yes
+        enabled: yes
+        state: started
+
+    - name: Start prometheus
+      systemd: 
+        name: prometheus.service
+        daemon_reload: yes
+        enabled: yes
+        state: started
+
+    - htpasswd:
+        path: /etc/nginx/.htpasswd
+        name: "{{dash_user}}"
+        password: "{{dash_passwd}}"
+        owner: root
+        group: www-data
+        mode: 0640
+    
+    - name: Remove nginx default config symlink
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+    - name: Remove nginx default config
+      file:
+        path: /etc/nginx/sites-available/default
+        state: absent
+
+    - name: Add nginx config file
+      template:
+        src: prometheus.conf
+        dest: /etc/nginx/sites-available/prometheus.conf
+
+    - name: Create symlink of prometheus.conf
+      file:
+        src: /etc/nginx/sites-available/prometheus.conf
+        dest: /etc/nginx/sites-enabled/prometheus.conf
+        state: link  
+        force: yes
+    
+    - name: Restart nginx
+      systemd: 
+        name: nginx.service
+        state: restarted

@@ -1,0 +1,6 @@
+prom_userId: "prometheus"
+prom_groupId: "prometheus"
+node_userId: "node_exporter"
+node_groupId: "node_exporter"
+dash_user: "admin"
+dash_passwd: "PrometheusAdmin"

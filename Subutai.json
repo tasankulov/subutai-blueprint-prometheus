@@ -1,0 +1,102 @@
+{
+    "name": "${environmentName}",
+    "description": "Prometheus",
+    "version": "2.8.1",
+    "author": "https://github.com/tasankulov",
+    "containers": [{
+        "hostname": "${webContainerName}",
+        "template": "debian-stretch",
+        "peer-criteria": "HTTP-GROUP",
+        "size": "${containerSize}",
+        "port-mapping": [{
+            "protocol": "https",
+            "domain": "${domainName}",
+            "internal-port": "80",
+            "external-port": "443"
+        }]
+    }],
+    "peer-criteria": [{
+        "name": "HTTP-GROUP"
+    }],
+    "ansible-configuration": {
+        "source-url": "https://github.com/tasankulov/subutai-blueprint-prometheus/archive/master.zip",
+        "ansible-playbook": "main.yml",
+        "extra-vars": [{
+                "key": "prom_userId",
+                "value": "${Prometheus_system_user}"
+            },
+            {
+                "key": "prom_groupId",
+                "value": "${Prometheus_system_user}"
+            },
+            {
+                "key": "node_userId",
+                "value": "${Node_exporter_system_user}"
+            },
+            {
+                "key": "node_groupId",
+                "value": "${Node_exporter_system_user}"
+            },
+            {
+                "key": "dash_user",
+                "value": "${Dashboard_user}"
+            },
+            {
+                "key": "dash_passwd",
+                "value": "${Dashboard_passwd}"
+            }
+        ],
+        "groups": [{
+            "name": "prometheus",
+            "hostnames": [
+                "${webContainerName}"
+            ]
+        }]
+    },
+    "user-variables": {
+        "environmentName": {
+            "description": "Enter the environment name",
+            "type": "string",
+            "default": "prometheus",
+            "validation": "[a-zA-Z0-9]+"
+        },
+        "domainName": {
+            "description": "Enter the application domain name",
+            "type": "domain",
+            "default": "change.the.domain",
+            "validation": "[a-zA-Z0-9]+"
+        },
+        "Prometheus_system_user": {
+            "description": "Prometheus system user",
+            "type": "string",
+            "default": "prometheus"
+        },
+        "Node_exporter_system_user": {
+            "description": "Node_exporter system user",
+            "type": "string",
+            "default": "node_exporter"
+        },
+        "Dashboard_user": {
+            "description": "Dashboard user",
+            "type": "string",
+            "default": "admin"
+        },
+        "Dashboard_passwd": {
+            "description": "Dashboard password",
+            "type": "string",
+            "default": "PrometheusAdmin"
+        },
+        "webContainerName": {
+            "description": "Enter the container's hostname",
+            "type": "string",
+            "default": "prometheus",
+            "validation": "[a-zA-Z0-9]+"
+        },
+        "containerSize": {
+            "description": "Container Size",
+            "type": "enum",
+            "default": "SMALL",
+            "validation": "TINY,SMALL,MEDIUM,LARGE,HUGE"
+        }
+    }
+}
