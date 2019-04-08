@@ -23,27 +23,27 @@
         "ansible-playbook": "main.yml",
         "extra-vars": [{
                 "key": "prom_userId",
-                "value": "${Prometheus_system_user}"
+                "value": "${PrometheusSystemUser}"
             },
             {
                 "key": "prom_groupId",
-                "value": "${Prometheus_system_user}"
+                "value": "${PrometheusSystemUser}"
             },
             {
                 "key": "node_userId",
-                "value": "${Node_exporter_system_user}"
+                "value": "${NodeEexporterSystemUser}"
             },
             {
                 "key": "node_groupId",
-                "value": "${Node_exporter_system_user}"
+                "value": "${NodeEexporterSystemUser}"
             },
             {
                 "key": "dash_user",
-                "value": "${Dashboard_user}"
+                "value": "${DashboardUser}"
             },
             {
                 "key": "dash_passwd",
-                "value": "${Dashboard_passwd}"
+                "value": "${DashboardPasswd}"
             }
         ],
         "groups": [{
@@ -66,22 +66,22 @@
             "default": "change.the.domain",
             "validation": "[a-zA-Z0-9]+"
         },
-        "Prometheus_system_user": {
+        "PrometheusSystemUser": {
             "description": "Prometheus system user",
             "type": "string",
             "default": "prometheus"
         },
-        "Node_exporter_system_user": {
+        "NodeEexporterSystemUser": {
             "description": "Node_exporter system user",
             "type": "string",
             "default": "node_exporter"
         },
-        "Dashboard_user": {
+        "DashboardUser": {
             "description": "Dashboard user",
             "type": "string",
             "default": "admin"
         },
-        "Dashboard_passwd": {
+        "DashboardPasswd": {
             "description": "Dashboard password",
             "type": "string",
             "default": "PrometheusAdmin"
